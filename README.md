@@ -1,2 +1,3 @@
-# apps-nodejs
-Apps Nodejs
+# APPS-NODEJS
+* Repositório para aplicações de estudo com **Nodejs**.
+:book:
