@@ -1,0 +1,8 @@
+1) criar diretório
+2) iniciar o npm
+3) baixar o express - framework
+4) baixar ejs - engine de views
+5) baixar consign - autoloader da aplicação
+6) baixar o body-parser - middleware que popula a body da requisição
+7) baixar o express-validator - valida dados enviados
+8) baixar o socket.io - npm install socket.io --save
