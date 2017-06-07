@@ -1,0 +1,216 @@
+<!DOCTYPE HTML>
+<html lang="pt-br">
+	<head>
+		<meta charset="UTF-8">
+
+		<title>Instagram Clone - WEB</title>
+		
+		<!-- JQuery -->
+		<script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+		<!-- bootstrap - link cdn -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	
+		<!-- incluindo css -->
+		<link href="css/style.css" rel="stylesheet">
+
+		<script>
+			$(document).ready(function(){
+
+				// Test for the ugliness.
+				if (window.location.hash == '#_=_'){
+
+				    // Check if the browser supports history.replaceState.
+				    if (history.replaceState) {
+
+				        // Keep the exact URL up to the hash.
+				        var cleanHref = window.location.href.split('#')[0];
+
+				        // Replace the URL in the address bar without messing with the back button.
+				        history.replaceState(null, null, cleanHref);
+
+				    } else {
+
+				        // Well, you're on an old browser, we can get rid of the _=_ but not the #.
+				        window.location.hash = '';
+
+				    }
+
+				}
+
+
+				function carrega_postagens() {
+
+					var xhr = new XMLHttpRequest();
+					xhr.onload = function() {
+						if (xhr.status === 200) {
+							
+							var data = JSON.parse(xhr.responseText);
+
+							for(let i = 0; i < data.result.length; i++) {
+								
+								$("#container_timeline").append(
+									'<div class="publicacao">'+
+										'<span class="titulo">'+ 
+											data.result[i].titulo+
+										'</span>'+
+										'<img src="http://localhost:8080/imagens/'+data.result[i].url_imagem+'" />'+
+										'<div class="comentarios" id="comentario_'+data.result[i]._id+'"></div>'+
+										'<div class="comentar">'+
+											'<input type="text" class="form-control input_comentario" id="post_'+data.result[i]._id+'" placeholder="Adicione um comentário..." />'+
+											'<button class="btn btn-default btn_postagem" value="'+data.result[i]._id+'" type="button">Comentar</button>'+
+										'</div>'+
+									'</div>'
+								);
+
+								if (data.result[i].comentarios !== undefined) {
+									var comentarios = data.result[i].comentarios;
+
+									for(let c = 0; c < comentarios.length; c++) {
+										$('#comentario_'+data.result[i]._id).append(
+											'<div class="txt_comentario">'+
+												'<button type="button" class="btn btn-default btn_remover_postagem btn-xs" value="'+comentarios[c].id_comentario+'">'+
+												' <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>'+
+												'</button>'+
+													'<strong class="txt_comment">'+
+														comentarios[c].comentario +
+													'</strong>'+
+											'</div>'
+										);
+									}
+								}
+							}
+
+							$('.btn_remover_postagem').click(function() {
+								var id_comentario = this.value;
+
+								var xhr = new XMLHttpRequest();
+								xhr.open('DELETE', 'http://localhost:8080/api/'+id_comentario);
+								xhr.setRequestHeader('Content-Type', 'application/json');
+
+								xhr.onload = function() {
+									if (xhr.status === 200) {
+										window.location.href = '/home';
+									}
+								}
+
+								xhr.send();
+							});
+
+							$(".btn_postagem").click(function() {
+								var id = this.value;
+								var id_post_comment = 'post_' + id;
+								var comment = $('#'+id_post_comment).val();
+
+								var xhr = new XMLHttpRequest();
+								xhr.open('PUT', 'http://localhost:8080/api/'+id);
+								xhr.setRequestHeader('Content-Type', 'application/json');
+
+								xhr.onload = function() {
+									if (xhr.status === 200) {
+										window.location.href = '/home';
+									}
+								}
+
+								xhr.send(JSON.stringify({comentario : comment}));
+							});
+						}
+					}
+
+					xhr.open('get', 'http://localhost:8080/api');
+					xhr.send();
+
+
+				}
+
+				carrega_postagens();
+
+				$('#btn_incluir').click(function(){
+					$('#container_timeline').hide();
+					$('#container_form').show();
+				});
+
+				$('#btn-cancelar-publicacao').click(function(){
+					$('#container_timeline').show();
+					$('#container_form').hide();
+					return false;
+				});
+
+				$("#btn-publicar").click(function() {
+
+					var form = new FormData();
+
+					var arquivo = document.getElementById('arquivo').files[0];
+					var titulo = document.getElementById('titulo').value;
+
+					form.append('titulo', titulo);
+					form.append('arquivo', arquivo);
+
+					var xhr = new XMLHttpRequest();
+
+					xhr.onreadystatechange = function() {
+						if (xhr.readyState === 200) {
+							var resposta = xhr.responseText;
+							console.log(resposta);
+							document.getElementById('mensagem').innerHTML = resposta;
+						}
+					}
+
+					xhr.open('post', 'http://localhost:8080/api');
+					xhr.send(form);
+				});
+
+			});
+		</script>
+
+	</head>
+
+	<body>
+
+		<nav class="navbar navbar-default">
+			<div class="container">
+				<div class="col-md-12">
+					<div class="container-fluid">
+						<a href="/home"><img alt="Instagram Clone - Versão WEB" src="images/logo2.jpg" class="logo2"></a>
+						<img alt="Incluir" src="images/incluir.jpg" class="pull-right btn-incluir" id="btn_incluir">
+						<p class="pull-right">Olá, <%= user.displayName %></p>
+						<% if (user) { %>
+							<ul class="nav navbar-nav navbar-right">
+							  <li><img src="<%= user.photos[0].value %>"></li>
+							</ul>
+						<% } %>
+						<a href="/logout">Sair</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="container">
+			<div class="col-md-2"></div>
+			<div class="col-md-8" id="container_timeline"></div>
+		</div>
+
+
+		<div class="container" style="display:none" id="container_form">
+			<div class="panel panel-default">
+
+			<div class="panel-heading"><h4>Publicar uma foto</h4></div>
+			
+			<div class="panel-body">
+				<div class="form-group">
+					<input type="file" name="arquivo" id="arquivo" class="form-control">
+				</div>
+
+				<div class="form-group">
+					<input type="text" name="titulo" id="titulo" class="form-control" placeholder="Titulo" autocomplete="off">
+				</div>
+
+				<div class="form-group">
+					<button class="btn btn-success" id="btn-publicar">Publicar</button>
+					<button class="btn btn-danger" id="btn-cancelar-publicacao">Cancelar</button>
+				</div>
+				<div id="mensagem"></div>
+			</div>
+		</div>
+	</body>
+</html>
